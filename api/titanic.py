@@ -13,7 +13,7 @@ class TitanicAPI:
             
             # Validate input
             if not all(field in data for field in required_fields):
-                return jsonify({"error": "Missing required fields", "required_fields": required_fields}), 400
+                return {"error": "Missing required fields", "required_fields": required_fields}, 400
             
             # Convert user input to expected format
             passenger = {
@@ -29,6 +29,8 @@ class TitanicAPI:
             
             titanicModel = TitanicModel.get_instance()
             response = titanicModel.predict(passenger)
-            return jsonify(response)
+
+            # Ensure response is a JSON-serializable dictionary
+            return jsonify(response)  # Make sure it's a dict, not a Response object!
 
     api.add_resource(_Predict, '/predict')
