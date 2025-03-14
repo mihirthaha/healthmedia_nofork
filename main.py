@@ -36,6 +36,7 @@ from api.userCars import userCars_api
 from api.mechanicsTips import mechanicsTips_api
 from api.vinStore import vinStore_api
 from api.favorites import itemStore_api
+from api.titanic import titanic_api
 
 from api.vote import vote_api
 # database Initialization functions
@@ -52,6 +53,7 @@ from model.carPost import CarPost
 from model.vehicle import Vehicle, initVehicles
 from model.listings import UserItem, initDefaultUser
 from model.carComments import CarComments
+from model.titanic import TitanicModel
 # server only Views
 
 # register URIs for api endpoints
@@ -63,6 +65,7 @@ app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
 app.register_blueprint(carChat_api)
+app.register_blueprint(titanic_api)
 # Added new files to create nestPosts, uses a different format than Mortensen and didn't want to touch his junk
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
