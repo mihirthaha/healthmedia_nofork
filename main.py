@@ -37,6 +37,7 @@ from api.mechanicsTips import mechanicsTips_api
 from api.vinStore import vinStore_api
 from api.favorites import itemStore_api
 from api.titanic import titanic_api
+from api.estonia import estonia_api
 
 from api.vote import vote_api
 # database Initialization functions
@@ -54,6 +55,7 @@ from model.vehicle import Vehicle, initVehicles
 from model.listings import UserItem, initDefaultUser
 from model.carComments import CarComments
 from model.titanic import TitanicModel
+from model.estonia import EstoniaModel
 # server only Views
 
 # register URIs for api endpoints
@@ -79,6 +81,7 @@ app.register_blueprint(userCars_api)
 app.register_blueprint(mechanicsTips_api)
 app.register_blueprint(vinStore_api)
 app.register_blueprint(itemStore_api)
+app.register_blueprint(estonia_api)
 
 @app.route('/carPosts')
 @login_required  # Ensure that only logged-in users can access this page
