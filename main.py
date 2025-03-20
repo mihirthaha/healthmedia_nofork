@@ -39,6 +39,7 @@ from api.favorites import itemStore_api
 from api.titanic import titanic_api
 from api.estonia import estonia_api
 from api.accident import accident_api
+from api.cancer import cancer_api
 
 from api.vote import vote_api
 # database Initialization functions
@@ -84,6 +85,7 @@ app.register_blueprint(vinStore_api)
 app.register_blueprint(itemStore_api)
 app.register_blueprint(estonia_api)
 app.register_blueprint(accident_api)
+app.register_blueprint(cancer_api)
 
 @app.route('/carPosts')
 @login_required  # Ensure that only logged-in users can access this page
