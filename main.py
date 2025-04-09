@@ -42,6 +42,7 @@ from api.accident import accident_api
 from api.cancer import cancer_api
 
 from api.vote import vote_api
+from api.frequency import frequency_saver_api
 # database Initialization functions
 from model.carChat import carChat
 from model.mechanicsTips import MechanicsTip
@@ -58,6 +59,7 @@ from model.listings import UserItem, initDefaultUser
 from model.carComments import CarComments
 from model.titanic import TitanicModel
 from model.estonia import EstoniaModel
+from model.frequency import FrequencySaver
 # server only Views
 
 # register URIs for api endpoints
@@ -86,6 +88,8 @@ app.register_blueprint(itemStore_api)
 app.register_blueprint(estonia_api)
 app.register_blueprint(accident_api)
 app.register_blueprint(cancer_api)
+app.register_blueprint(frequency_saver_api)
+
 
 @app.route('/carPosts')
 @login_required  # Ensure that only logged-in users can access this page
