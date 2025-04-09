@@ -15,11 +15,11 @@ class Statistics(db.Model):
         _user_id (db.Column): An integer representing the user who created the post.
         _group_id (db.Column): An integer representing the group to which the post belongs.
     """
-    __tablename__ = 'user_statistics'
+    __tablename__ = 'timeofday'
     id = db.Column(db.Integer, primary_key=True)
-    _xp = db.Column(db.Integer, nullable=False, unique=False)
-    _level = db.Column(db.Integer, nullable=False, unique=False)
-    _user = db.Column(db.String(255), unique=False, nullable=False)
+    likes = db.Column(db.Integer, nullable=False, unique=False)
+    views = db.Column(db.Integer, nullable=False, unique=False)
+    time = db.Column(db.Integer, unique=False, nullable=False)
    
    
     def __init__(self, xp, level, user):

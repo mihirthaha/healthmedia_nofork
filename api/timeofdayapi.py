@@ -1,117 +1,74 @@
-from flask import Blueprint, jsonify, request
-from flask_restful import Api, Resource
-from model.quizbase import db, Statistics
+import time
+import instaloader
 
-userstats = Blueprint('userstats', __name__, url_prefix='/api')
-api = Api(userstats)
+# Load session using the Instagram username (Instaloader finds the correct file)
+def load_instaloader_session(username):
+    L = instaloader.Instaloader()
+    L.load_session_from_file(username)
+    return L
 
-class QuizAPI:
-    # Helper function to calculate XP threshold for the current level
-    @staticmethod
-    def xp_threshold(level):
-        return level * 10  # Threshold increases linearly with level
+# Fetch comments for a post, including pagination
+def fetch_post_info(L, post_shortcode, retries=5):
+    comments = []
+    for attempt in range(retries):
+        try:
+            post = instaloader.Post.from_shortcode(L.context, post_shortcode)
 
-    # Function to handle leveling up
-    @staticmethod
-    def level_up(user_stats):
-        while user_stats._xp >= QuizAPI.xp_threshold(user_stats._level):
-            user_stats._xp -= QuizAPI.xp_threshold(user_stats._level)
-            user_stats._level += 1
+            # Fetch general info
+            likes = post.likes
+            views = post.video_view_count if post.is_video else 'N/A'
+            upload_time = post.date_local.strftime('%Y-%m-%d %H:%M:%S')
+            time_of_day = post.date_local.strftime('%p')  # AM or PM
 
-    # Endpoint to submit quiz results
-    class _SubmitQuiz(Resource):
-        def post(self):
-            data = request.json
-            user = data.get('user')
-            correct_answers = data.get('correct', 0)
-            total_questions = data.get('total', 0)
+            # Fetch comments
+            for comment in post.get_comments():
+                comments.append(comment.text)
 
-            if not user:
-                return {"message": "User parameter is required"}, 400
+            print(f"Post {post_shortcode} info:")
+            print(f"- Likes: {likes}")
+            print(f"- Views: {views}")
+            print(f"- Uploaded at: {upload_time} ({time_of_day})")
+            print(f"- Total Comments: {len(comments)}\n")
 
-            if total_questions == 0:
-                return {"message": "Invalid quiz data"}, 400
+            return {
+                "likes": likes,
+                "views": views,
+                "upload_time": upload_time,
+                "time_of_day": time_of_day,
+                "comments": comments
+            }
 
-            # Fetch or create user stats
-            user_stats = Statistics.query.filter_by(_user=user).first()
-            if not user_stats:
-                user_stats = Statistics(xp=0, level=1, user=user)
-                db.session.add(user_stats)
-
-            # Calculate percentage of correct answers
-            percentage_correct = (correct_answers / total_questions) * 100
-
-            # Award XP if at least 75% correct
-            if percentage_correct >= 75:
-                user_stats._xp += correct_answers
-
-            # Handle leveling up
-            QuizAPI.level_up(user_stats)
-
-            # Save changes to the database
-            db.session.commit()
-
-            return jsonify({"xp": user_stats._xp, "level": user_stats._level, "user": user})
-
-    # Endpoint to retrieve current user stats
-    class _GetUserStats(Resource):
-        def get(self):
-            user = request.args.get('user')
-            if not user:
-                return {"message": "User parameter is required"}, 400
-
-            user_stats = Statistics.query.filter_by(_user=user).first()
-            if not user_stats:
-                return {"message": "User not found"}, 404
-
-            return jsonify({"xp": user_stats._xp, "level": user_stats._level, "user": user})
-
-    class _GetLeaderStats(Resource):
-        def get(self):
-            users = Statistics.query.all()  # Get all user stats
-            if not users:
-                return {"message": "No users found"}, 404
-
-            leaderboard = []
-            for user_stats in users:
-                leaderboard.append({
-                    "username": user_stats._user,
-                    "xp": user_stats._xp,
-                    "level": user_stats._level
-                })
-
-            return jsonify(leaderboard)
+        except Exception as e:
+            print(f"Error fetching data for {post_shortcode}: {e}")
+            if attempt < retries - 1:
+                print("Retrying in 30s...")
+                time.sleep(30)
+            else:
+                print("Max retries reached. Skipping this post.")
+                return None
 
 
-    # Endpoint to manually update or add user stats
-    class _UpdateUserStats(Resource):
-        def post(self):
-            data = request.json
-            user = data.get('user')
-            xp = data.get('xp')
-            level = data.get('level')
+# Main execution
+def main():
+    username = 'hahahahaht1'  # Your actual Instagram username tied to the session
+    post_shortcodes = ['DIKdb7Gy5vM', 'DIE6HE2B_nK']  # Replace with real post shortcodes if needed
 
-            if not user:
-                return {"message": "User parameter is required"}, 400
+    L = load_instaloader_session(username)
 
-            user_stats = Statistics.query.filter_by(_user=user).first()
-            if not user_stats:
-                user_stats = Statistics(xp=0, level=1, user=user)
-                db.session.add(user_stats)
+    for shortcode in post_shortcodes:
+        print(f"Processing post: {shortcode}")
+        post_data = fetch_post_info(L, shortcode)
 
-            # Update the stats if provided
-            if xp is not None:
-                user_stats._xp = xp
-            if level is not None:
-                user_stats._level = level
+        if post_data:
+            print("Comments:")
+            for c in post_data['comments']:
+                print("-", c)
+        else:
+            print(f"Failed to get data for post {shortcode}")
 
-            # Save changes to the database
-            db.session.commit()
+        time.sleep(10)
 
-            return jsonify({"message": "User stats updated", "xp": user_stats._xp, "level": user_stats._level, "user": user})
 
-    # Register endpoints
-    api.add_resource(_SubmitQuiz, '/userstats')
-    api.add_resource(_GetLeaderStats, '/userstats/leaderboard')
-    api.add_resource(_GetUserStats, '/userstats/get')
-    api.add_resource(_UpdateUserStats, '/userstats/update')
+if __name__ == "__main__":
+    main()
+
