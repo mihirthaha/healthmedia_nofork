@@ -27,6 +27,26 @@ def download_images_from_post(L, post_shortcode, download_folder, retries=5):
                 time.sleep(30)
             else:
                 return None
+            
+app = Flask(__name__)
+
+@app.route('/upload-photo', methods=['POST'])
+def upload_photo():
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No photo uploaded'}), 400
+
+    photo = request.files['photo']
+    image = Image.open(photo.stream).convert("RGB")
+    # Save the image if needed
+    image_path = os.path.join('uploaded_images', photo.filename)
+    image.save(image_path)
+
+    # Proceed to analyze the image
+    saturation, brightness = extract_features(image)
+    predicted_likes = predict_likes(saturation, brightness)
+
+    return jsonify({'predicted_likes': predicted_likes})
+
 
 @app.route('/download-image', methods=['POST'])
 def download_image():

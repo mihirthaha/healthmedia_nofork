@@ -1,4 +1,5 @@
 from sklearn.linear_model import LinearRegression
+import numpy as np
 
 sample_x = np.array([[1.2, 2.3, 3.1],
               [2.0, 3.1, 4.0],
