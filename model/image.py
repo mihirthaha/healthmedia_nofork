@@ -51,8 +51,8 @@ print("Coefficients:", model.coef_)
 print("Intercept:", model.intercept_)
  
 # Uncomment the following lines to test the image prediction function
-# image_path = "path/to/your/image.jpg"
-# print(f"Automatic prediction for image {image_path}: {predict_likes_from_image(image_path)}")
+image_path = "/home/clairelee/nighthawk/healthmedia_backend/model/IMG_3775.jpg"
+print(f"Automatic prediction for image {image_path}: {predict_likes_from_image(image_path)}")
  
 X_new = np.array([[5.0, 3.0, 4.0]])
 y_pred = model.predict(X_new)
