@@ -1,19 +1,23 @@
-import csv
-from flask import Blueprint, jsonify, request
+import pandas as pd
+from flask import Blueprint, jsonify
 from flask_restful import Api, Resource
-from __init__ import app  # Ensure __init__.py initializes your Flask app
+from __init__ import app
+import csv
+import os
 
 # Define the Blueprint
 legoland_time_api = Blueprint('legoland_time_api', __name__, url_prefix='/api')
-
-# Attach Flask-RESTful API to the Blueprint
 api = Api(legoland_time_api)
 
 # CSV file path
-POSTS_FILE = '/home/mihirthaha/nighthawk/healthmedia_backend-1/api/legoland_posts.csv'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+POSTS_FILE = os.path.join(BASE_DIR, 'legoland_posts.csv')
+
+# Resource to return all posts (as before)
+from flask import make_response
 
 
-# Helper function to load posts from CSV
+# Make sure this function only returns data or (data, status_code)
 def load_posts():
     posts = []
     try:
@@ -43,18 +47,38 @@ def load_posts():
         return {"error": str(e)}, 500
 
 
-# Define the Resource class
 class LegolandTimeAPI(Resource):
     def get(self):
         result = load_posts()
         if isinstance(result, tuple):
-            return jsonify(result[0]), result[1]
+            return make_response(jsonify(result[0]), result[1])
         return jsonify(result)
 
 
-# Map the resource to the endpoint
-api.add_resource(LegolandTimeAPI, '/posts')
+class LegolandOptimal(Resource):
+    def get(self):
+        result = load_posts()
+        if isinstance(result, tuple):
+            return make_response(jsonify(result[0]), result[1])
+
+        posts = result['posts']
+        df = pd.DataFrame(posts)
+
+        hourly_avg = df.groupby('time_of_day')['likes_views'].mean()
+        optimal_hour = int(hourly_avg.idxmax())
+        highest_avg = float(hourly_avg.max())
+
+        return jsonify({
+            "optimal_hour": optimal_hour,
+            "average_likes_views_at_optimal_hour": highest_avg,
+            "hourly_averages": hourly_avg.to_dict()
+        })
+
+
+# Map the resources to the endpoints
+api.add_resource(LegolandTimeAPI, '/timeofdayposts')
+api.add_resource(LegolandOptimal, '/optimaltime')
 
 
 if __name__ == '__main__':
-   app.run(debug=True)
+    app.run(debug=True)
