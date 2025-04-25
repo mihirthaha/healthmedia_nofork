@@ -19,3 +19,4 @@ python_dotenv
 boto3
 google-generativeai
 instaloader
+Pillow
