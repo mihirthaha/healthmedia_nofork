@@ -3,6 +3,12 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import random
 import csv
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from PIL import Image, ImageStat
+import numpy as np
+import os
+from flask import request
 
 db = SQLAlchemy()
 
@@ -114,6 +120,57 @@ def get_affirmation():
         "I give and receive love freely."
     ]
     return jsonify(random.choice(affirmations))
+
+# Load dataset and train model once
+likes_data = pd.read_csv('datasets/legoland.csv')
+X = likes_data[['Brightness', 'Saturation', 'Size']].values
+y = likes_data['numLikes'].values
+
+model = LinearRegression()
+model.fit(X, y)
+
+def extract_image_features(image_path):
+    img = Image.open(image_path)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    stat = ImageStat.Stat(img)
+    brightness = sum(stat.mean) / len(stat.mean)
+
+    r, g, b = stat.mean
+    max_rgb = max(r, g, b)
+    min_rgb = min(r, g, b)
+    saturation = (max_rgb - min_rgb) / max_rgb if max_rgb > 0 else 0
+
+    width, height = img.size
+    size = (width * height) / 1000000  # in megapixels
+
+    return brightness, saturation, size
+
+@app.route('/api/predict-likes', methods=['POST'])
+def predict_likes():
+    file = request.files.get('image')
+    if not file:
+        return jsonify({'error': 'No image uploaded'}), 400
+
+    temp_path = 'temp_image.jpg'
+    file.save(temp_path)
+
+    try:
+        brightness, saturation, size = extract_image_features(temp_path)
+        X_new = np.array([[brightness, saturation, size]])
+        prediction = model.predict(X_new)[0]
+
+        return jsonify({
+            'brightness': brightness,
+            'saturation': saturation,
+            'size': size,
+            'predicted_likes': prediction
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        os.remove(temp_path)
 
 if __name__ == '__main__':
     # starts flask server on default port, http://127.0.0.1:5001

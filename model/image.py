@@ -39,7 +39,7 @@ def predict_likes_from_image(image_path):
  
     return y_pred[0]
  
-data = pd.read_csv('model/legoland.csv')
+data = pd.read_csv('datasets/legoland.csv')
  
 X = data[['Brightness', 'Saturation', 'Size']].values
 y = data['numLikes'].values
