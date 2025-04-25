@@ -1,74 +1,60 @@
-import time
-import instaloader
+import csv
+from flask import Blueprint, jsonify, request
+from flask_restful import Api, Resource
+from __init__ import app  # Ensure __init__.py initializes your Flask app
 
-# Load session using the Instagram username (Instaloader finds the correct file)
-def load_instaloader_session(username):
-    L = instaloader.Instaloader()
-    L.load_session_from_file(username)
-    return L
+# Define the Blueprint
+legoland_time_api = Blueprint('legoland_time_api', __name__, url_prefix='/api')
 
-# Fetch comments for a post, including pagination
-def fetch_post_info(L, post_shortcode, retries=5):
-    comments = []
-    for attempt in range(retries):
-        try:
-            post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+# Attach Flask-RESTful API to the Blueprint
+api = Api(legoland_time_api)
 
-            # Fetch general info
-            likes = post.likes
-            views = post.video_view_count if post.is_video else 'N/A'
-            upload_time = post.date_local.strftime('%Y-%m-%d %H:%M:%S')
-            time_of_day = post.date_local.strftime('%p')  # AM or PM
-
-            # Fetch comments
-            for comment in post.get_comments():
-                comments.append(comment.text)
-
-            print(f"Post {post_shortcode} info:")
-            print(f"- Likes: {likes}")
-            print(f"- Views: {views}")
-            print(f"- Uploaded at: {upload_time} ({time_of_day})")
-            print(f"- Total Comments: {len(comments)}\n")
-
-            return {
-                "likes": likes,
-                "views": views,
-                "upload_time": upload_time,
-                "time_of_day": time_of_day,
-                "comments": comments
-            }
-
-        except Exception as e:
-            print(f"Error fetching data for {post_shortcode}: {e}")
-            if attempt < retries - 1:
-                print("Retrying in 30s...")
-                time.sleep(30)
-            else:
-                print("Max retries reached. Skipping this post.")
-                return None
+# CSV file path
+POSTS_FILE = '/home/mihirthaha/nighthawk/healthmedia_backend-1/api/legoland_posts.csv'
 
 
-# Main execution
-def main():
-    username = 'hahahahaht1'  # Your actual Instagram username tied to the session
-    post_shortcodes = ['DIKdb7Gy5vM', 'DIE6HE2B_nK']  # Replace with real post shortcodes if needed
+# Helper function to load posts from CSV
+def load_posts():
+    posts = []
+    try:
+        with open(POSTS_FILE, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                try:
+                    likes_views = int(row['likes/views'].replace(",", ""))
+                    time_of_day = int(row['time_of_day'])
+                    posts.append({
+                        "url": row['url'],
+                        "likes_views": likes_views,
+                        "time_of_day": time_of_day
+                    })
+                except ValueError:
+                    continue  # Skip malformed rows
 
-    L = load_instaloader_session(username)
+        if not posts:
+            return {"error": "No valid post data found."}, 404
 
-    for shortcode in post_shortcodes:
-        print(f"Processing post: {shortcode}")
-        post_data = fetch_post_info(L, shortcode)
+        return {
+            "total_posts": len(posts),
+            "posts": posts
+        }
 
-        if post_data:
-            print("Comments:")
-            for c in post_data['comments']:
-                print("-", c)
-        else:
-            print(f"Failed to get data for post {shortcode}")
-
-        time.sleep(10)
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
-if __name__ == "__main__":
-    main()
+# Define the Resource class
+class LegolandTimeAPI(Resource):
+    def get(self):
+        result = load_posts()
+        if isinstance(result, tuple):
+            return jsonify(result[0]), result[1]
+        return jsonify(result)
 
+
+# Map the resource to the endpoint
+api.add_resource(LegolandTimeAPI, '/posts')
+
+
+if __name__ == '__main__':
+   app.run(debug=True)

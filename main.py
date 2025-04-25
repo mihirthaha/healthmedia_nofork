@@ -40,6 +40,7 @@ from api.titanic import titanic_api
 from api.estonia import estonia_api
 from api.accident import accident_api
 from api.cancer import cancer_api
+from api.timeofdayapi import LegolandTimeAPI
 
 from api.vote import vote_api
 from api.frequency import frequency_saver_api
