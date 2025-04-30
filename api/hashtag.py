@@ -8,7 +8,7 @@ db.init_app(app)
 @app.route('/add_hashtag', methods=['POST'])
 def add_hashtag():
     data = request.get_json()
-    hashtag = Hashtag.query.filter_by(hashtag=data['hashtag']).first()
+    hashtag = hashtag.query.filter_by(hashtag=data['hashtag']).first()
     
     if hashtag:
         hashtag.total_posts += 1
