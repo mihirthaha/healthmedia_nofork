@@ -45,6 +45,17 @@ def average_likes():
     num_posts = len(data["numLikes"])
     average_likes = total_likes / num_posts
     return average_likes
+
+def classify_rating(score):
+    if score >= 90:
+        return "Excellent"
+    elif score >= 75:
+        return "Good"
+    elif score >= 60:
+        return "Moderate"
+    else:
+        return "Poor"
+    
  
 data = pd.read_csv('datasets/legoland.csv')
  
@@ -63,6 +74,11 @@ predicted_likes = predict_likes_from_image(image_path)
 print(f"Automatic prediction for image {image_path}: {predicted_likes}")
 
 rating = 75 * predicted_likes / average_likes()
+category = classify_rating(rating)
+
+print(f"Rating Score: {rating:.2f}")
+print(f"Rating Category: {category}")
+
  
 X_new = np.array([[5.0, 3.0, 4.0]])
 y_pred = model.predict(X_new)

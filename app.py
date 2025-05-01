@@ -130,6 +130,21 @@ y = likes_data['numLikes'].values
 model = LinearRegression()
 model.fit(X, y)
 
+def average_likes():
+    total_likes = likes_data["numLikes"].sum()
+    num_posts = len(likes_data["numLikes"])
+    return total_likes / num_posts
+
+def classify_rating(score):
+    if score >= 90:
+        return "Excellent"
+    elif score >= 75:
+        return "Good"
+    elif score >= 60:
+        return "Moderate"
+    else:
+        return "Poor"
+
 @app.route('/api/predict-likes', methods=['POST'])
 def predict_likes():
     file = request.files.get('image')
@@ -144,16 +159,23 @@ def predict_likes():
         X_new = np.array([[brightness, saturation, size]])
         prediction = model.predict(X_new)[0]
 
+        avg_likes = average_likes()
+        rating_score = 75 * prediction / avg_likes
+        rating_label = classify_rating(rating_score)
+
         return jsonify({
             'brightness': brightness,
             'saturation': saturation,
             'size': size,
-            'predicted_likes': prediction
+            'predicted_likes': prediction,
+            'rating_score': rating_score,
+            'rating_label': rating_label
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
         os.remove(temp_path)
+
 
 if __name__ == '__main__':
     # starts flask server on default port, http://127.0.0.1:5001
