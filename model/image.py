@@ -38,6 +38,13 @@ def predict_likes_from_image(image_path):
     print(f"Predicted likes: {y_pred[0]:.2f}")
  
     return y_pred[0]
+
+def average_likes():
+    data = pd.read_csv('datasets/legoland.csv')
+    total_likes = data["numLikes"].sum()
+    num_posts = len(data["numLikes"])
+    average_likes = total_likes / num_posts
+    return average_likes
  
 data = pd.read_csv('datasets/legoland.csv')
  
@@ -52,8 +59,15 @@ print("Intercept:", model.intercept_)
  
 # Uncomment the following lines to test the image prediction function
 image_path = "/home/clairelee/nighthawk/healthmedia_backend/model/IMG_3775.jpg"
-print(f"Automatic prediction for image {image_path}: {predict_likes_from_image(image_path)}")
+predicted_likes = predict_likes_from_image(image_path) 
+print(f"Automatic prediction for image {image_path}: {predicted_likes}")
+
+rating = 75 * predicted_likes / average_likes()
  
 X_new = np.array([[5.0, 3.0, 4.0]])
 y_pred = model.predict(X_new)
 print(f"Manual prediction for input {X_new[0]}:", y_pred)
+
+
+
+    
