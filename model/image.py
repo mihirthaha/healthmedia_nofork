@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from PIL import Image, ImageStat
 import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
  
 def extract_image_features(image_path):
     if not os.path.exists(image_path):
@@ -47,11 +49,11 @@ def average_likes():
     return average_likes
 
 def classify_rating(score):
-    if score >= 90:
+    if score >= 70:
         return "Excellent"
-    elif score >= 75:
+    elif score >= 55:
         return "Good"
-    elif score >= 60:
+    elif score >= 40:
         return "Moderate"
     else:
         return "Poor"
@@ -62,7 +64,8 @@ data = pd.read_csv('datasets/legoland.csv')
 X = data[['Brightness', 'Saturation', 'Size']].values
 y = data['numLikes'].values
  
-model = LinearRegression()
+scaler = StandardScaler()
+model = make_pipeline(scaler, LinearRegression())
 model.fit(X, y)
  
 print("Coefficients:", model.coef_)
