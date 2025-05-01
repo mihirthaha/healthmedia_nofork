@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 import csv
 
 # Define the blueprint for the hashtag API
-hashtag_api = Blueprint('hashtag_api', __name__)
+hashtag_api = Blueprint('hashtag_api', __name__, url_prefix='/api')
 
 # Route to return all hashtags and their average likes from the CSV
 @hashtag_api.route('/average_likes', methods=['GET'])
