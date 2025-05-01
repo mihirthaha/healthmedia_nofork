@@ -44,7 +44,7 @@ def get_hashtag_avg_likes(hashtag):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Route to handle hashtag analysis from the frontend
+# ✅ Fixed route to avoid duplicate /api prefix
 @hashtag_api.route('/hashtag', methods=['POST'])
 def analyze_hashtags_from_csv():
     data = request.get_json()
