@@ -45,7 +45,7 @@ def get_hashtag_avg_likes(hashtag):
         return jsonify({'error': str(e)}), 500
 
 # Route to handle hashtag analysis from the frontend
-@hashtag_api.route('/api/hashtag-analysis', methods=['POST'])
+@hashtag_api.route('/api/hashtag', methods=['POST'])
 def analyze_hashtags_from_csv():
     data = request.get_json()
     if not data or 'hashtags' not in data:

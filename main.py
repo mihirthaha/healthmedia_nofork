@@ -54,7 +54,6 @@ app.register_blueprint(section_api)
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
-app.register_blueprint(frequency_saver_api)
 app.register_blueprint(legoland_time_api)
 app.register_blueprint(hashtag_api)
 
