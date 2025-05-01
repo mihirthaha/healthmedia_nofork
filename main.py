@@ -28,7 +28,9 @@ from api.nestPost import nestPost_api # Justin added this, custom format for his
 from api.messages_api import messages_api # Adi added this, messages for his website
 from api.timeofdayapi import legoland_time_api
 from api.vote import vote_api
-from api.frequency import frequency_saver_api
+from api.hashtag import hashtag_api
+from api.hashtag import frequency_saver_api
+
 
 # database Initialization functions
 from model.user import User, initUsers
@@ -55,6 +57,9 @@ app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(frequency_saver_api)
 app.register_blueprint(legoland_time_api)
+app.register_blueprint(hashtag_api)
+
+
 
 
 # Tell Flask-Login the view function name of your login route
