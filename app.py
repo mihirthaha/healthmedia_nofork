@@ -9,7 +9,7 @@ from PIL import Image, ImageStat
 import numpy as np
 import os
 from flask import request
-from model.image import predict_likes_from_image, extract_image_features
+from model.image import model, predict_likes_from_image, extract_image_features
 
 db = SQLAlchemy()
 
@@ -126,9 +126,6 @@ def get_affirmation():
 likes_data = pd.read_csv('datasets/legoland.csv')
 X = likes_data[['Brightness', 'Saturation', 'Size']].values
 y = likes_data['numLikes'].values
-
-model = LinearRegression()
-model.fit(X, y)
 
 def average_likes():
     total_likes = likes_data["numLikes"].sum()
