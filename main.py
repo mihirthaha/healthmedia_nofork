@@ -29,7 +29,6 @@ from api.messages_api import messages_api # Adi added this, messages for his web
 from api.timeofdayapi import legoland_time_api
 from api.vote import vote_api
 from api.hashtag import hashtag_api
-from api.hashtag import frequency_saver_api
 
 
 # database Initialization functions
