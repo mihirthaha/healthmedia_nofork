@@ -133,11 +133,11 @@ def average_likes():
     return total_likes / num_posts
 
 def classify_rating(score):
-    if score >= 90:
+    if score >= 70:
         return "Excellent"
-    elif score >= 75:
+    elif score >= 50:
         return "Good"
-    elif score >= 60:
+    elif score >= 30:
         return "Moderate"
     else:
         return "Poor"
