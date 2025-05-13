@@ -23,7 +23,12 @@ reel_urls = [
     "https://www.instagram.com/legolandcalifornia/reel/DIj9QuMTGAI/?hl=en",
     "https://www.instagram.com/legolandcalifornia/p/DIhYFlqzC3A/?hl=en",
     "https://www.instagram.com/legolandcalifornia/reel/DIe_egUzt42/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/p/DICkUZ6BbiM/?hl=en"
+    "https://www.instagram.com/legolandcalifornia/p/DICkUZ6BbiM/?hl=en",
+    "https://www.instagram.com/legolandcalifornia/reel/DJFWe1kTUPb/?hl=en",
+    "https://www.instagram.com/legolandcalifornia/p/DIhYFlqzC3A/",
+    "https://www.instagram.com/legolandcalifornia/reel/DIj9QuMTGAI/",
+    "https://www.instagram.com/legolandcalifornia/reel/DIe_egUzt42/",
+    
 ]
 
 def extract_likes_or_views(driver):
