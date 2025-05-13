@@ -157,7 +157,7 @@ def predict_likes():
         prediction = model.predict(X_new)[0]
 
         avg_likes = average_likes()
-        rating_score = 75 * prediction / avg_likes
+        rating_score = 100 * prediction / avg_likes
         rating_label = classify_rating(rating_score)
 
         return jsonify({
