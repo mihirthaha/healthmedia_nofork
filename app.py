@@ -6,6 +6,13 @@ from collections import defaultdict
 import random
 import pandas as pd
 import csv
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from PIL import Image, ImageStat
+import numpy as np
+import os
+from flask import request
+from model.image import model, predict_likes_from_image, extract_image_features
 
 db = SQLAlchemy()
 
@@ -128,6 +135,58 @@ def get_affirmation():
         "I give and receive love freely."
     ]
     return jsonify(random.choice(affirmations))
+
+# Load dataset and train model once
+likes_data = pd.read_csv('datasets/legoland.csv')
+X = likes_data[['Brightness', 'Saturation', 'Size']].values
+y = likes_data['numLikes'].values
+
+def average_likes():
+    total_likes = likes_data["numLikes"].sum()
+    num_posts = len(likes_data["numLikes"])
+    return total_likes / num_posts
+
+def classify_rating(score):
+    if score >= 70:
+        return "Excellent"
+    elif score >= 50:
+        return "Good"
+    elif score >= 30:
+        return "Moderate"
+    else:
+        return "Poor"
+
+@app.route('/api/predict-likes', methods=['POST'])
+def predict_likes():
+    file = request.files.get('image')
+    if not file:
+        return jsonify({'error': 'No image uploaded'}), 400
+
+    temp_path = 'temp_image.jpg'
+    file.save(temp_path)
+
+    try:
+        brightness, saturation, size = extract_image_features(temp_path)
+        X_new = np.array([[brightness, saturation, size]])
+        prediction = model.predict(X_new)[0]
+
+        avg_likes = average_likes()
+        rating_score = 100 * prediction / avg_likes
+        rating_label = classify_rating(rating_score)
+
+        return jsonify({
+            'brightness': brightness,
+            'saturation': saturation,
+            'size': size,
+            'predicted_likes': prediction,
+            'rating_score': rating_score,
+            'rating_label': rating_label
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        os.remove(temp_path)
+
 
 if __name__ == '__main__':
     # starts flask server on default port, http://127.0.0.1:5001

@@ -1,0 +1,7 @@
+import instaloader
+
+L = instaloader.Instaloader()
+username = "clairelee0817"
+password = "BTSrules!1" # Change later
+L.login(username, password)
+L.save_session_to_file(username)

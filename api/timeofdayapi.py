@@ -1,74 +1,84 @@
-import time
-import instaloader
+import pandas as pd
+from flask import Blueprint, jsonify
+from flask_restful import Api, Resource
+from __init__ import app
+import csv
+import os
 
-# Load session using the Instagram username (Instaloader finds the correct file)
-def load_instaloader_session(username):
-    L = instaloader.Instaloader()
-    L.load_session_from_file(username)
-    return L
+# Define the Blueprint
+legoland_time_api = Blueprint('legoland_time_api', __name__, url_prefix='/api')
+api = Api(legoland_time_api)
 
-# Fetch comments for a post, including pagination
-def fetch_post_info(L, post_shortcode, retries=5):
-    comments = []
-    for attempt in range(retries):
-        try:
-            post = instaloader.Post.from_shortcode(L.context, post_shortcode)
+# CSV file path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+POSTS_FILE = os.path.join(BASE_DIR, 'legoland_posts.csv')
 
-            # Fetch general info
-            likes = post.likes
-            views = post.video_view_count if post.is_video else 'N/A'
-            upload_time = post.date_local.strftime('%Y-%m-%d %H:%M:%S')
-            time_of_day = post.date_local.strftime('%p')  # AM or PM
-
-            # Fetch comments
-            for comment in post.get_comments():
-                comments.append(comment.text)
-
-            print(f"Post {post_shortcode} info:")
-            print(f"- Likes: {likes}")
-            print(f"- Views: {views}")
-            print(f"- Uploaded at: {upload_time} ({time_of_day})")
-            print(f"- Total Comments: {len(comments)}\n")
-
-            return {
-                "likes": likes,
-                "views": views,
-                "upload_time": upload_time,
-                "time_of_day": time_of_day,
-                "comments": comments
-            }
-
-        except Exception as e:
-            print(f"Error fetching data for {post_shortcode}: {e}")
-            if attempt < retries - 1:
-                print("Retrying in 30s...")
-                time.sleep(30)
-            else:
-                print("Max retries reached. Skipping this post.")
-                return None
+# Resource to return all posts (as before)
+from flask import make_response
 
 
-# Main execution
-def main():
-    username = 'hahahahaht1'  # Your actual Instagram username tied to the session
-    post_shortcodes = ['DIKdb7Gy5vM', 'DIE6HE2B_nK']  # Replace with real post shortcodes if needed
+# Make sure this function only returns data or (data, status_code)
+def load_posts():
+    posts = []
+    try:
+        with open(POSTS_FILE, newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                try:
+                    likes_views = int(row['likes/views'].replace(",", ""))
+                    time_of_day = int(row['time_of_day'])
+                    posts.append({
+                        "url": row['url'],
+                        "likes_views": likes_views,
+                        "time_of_day": time_of_day
+                    })
+                except ValueError:
+                    continue  # Skip malformed rows
 
-    L = load_instaloader_session(username)
+        if not posts:
+            return {"error": "No valid post data found."}, 404
 
-    for shortcode in post_shortcodes:
-        print(f"Processing post: {shortcode}")
-        post_data = fetch_post_info(L, shortcode)
+        return {
+            "total_posts": len(posts),
+            "posts": posts
+        }
 
-        if post_data:
-            print("Comments:")
-            for c in post_data['comments']:
-                print("-", c)
-        else:
-            print(f"Failed to get data for post {shortcode}")
-
-        time.sleep(10)
+    except Exception as e:
+        return {"error": str(e)}, 500
 
 
-if __name__ == "__main__":
-    main()
+class LegolandTimeAPI(Resource):
+    def get(self):
+        result = load_posts()
+        if isinstance(result, tuple):
+            return make_response(jsonify(result[0]), result[1])
+        return jsonify(result)
 
+
+class LegolandOptimal(Resource):
+    def get(self):
+        result = load_posts()
+        if isinstance(result, tuple):
+            return make_response(jsonify(result[0]), result[1])
+
+        posts = result['posts']
+        df = pd.DataFrame(posts)
+
+        hourly_avg = df.groupby('time_of_day')['likes_views'].mean()
+        optimal_hour = int(hourly_avg.idxmax())
+        highest_avg = float(hourly_avg.max())
+
+        return jsonify({
+            "optimal_hour": optimal_hour,
+            "average_likes_views_at_optimal_hour": highest_avg,
+            "hourly_averages": hourly_avg.to_dict()
+        })
+
+
+# Map the resources to the endpoints
+api.add_resource(LegolandTimeAPI, '/timeofdayposts')
+api.add_resource(LegolandOptimal, '/optimaltime')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

@@ -26,26 +26,12 @@ from api.group import group_api
 from api.section import section_api
 from api.nestPost import nestPost_api # Justin added this, custom format for his website
 from api.messages_api import messages_api # Adi added this, messages for his website
-from api.carChat import carChat_api
-from api.carPost import carPost_api
-from api.student import student_api
-from api.vin import vin_api
-from api.chatBot import chatbot_api
-from api.carComments import carComments_api
-from api.userCars import userCars_api
-from api.mechanicsTips import mechanicsTips_api
-from api.vinStore import vinStore_api
-from api.favorites import itemStore_api
-from api.titanic import titanic_api
-from api.estonia import estonia_api
-from api.accident import accident_api
-from api.cancer import cancer_api
-
+from api.timeofdayapi import legoland_time_api
 from api.vote import vote_api
-from api.frequency import frequency_saver_api
+from api.hashtag import hashtag_api
+
+
 # database Initialization functions
-from model.carChat import carChat
-from model.mechanicsTips import MechanicsTip
 from model.user import User, initUsers
 from model.section import Section, initSections
 from model.group import Group, initGroups
@@ -53,12 +39,6 @@ from model.channel import Channel, initChannels
 from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts # Justin added this, custom format for his website
 from model.vote import Vote, initVotes
-from model.carPost import CarPost
-from model.vehicle import Vehicle, initVehicles
-from model.listings import UserItem, initDefaultUser
-from model.carComments import CarComments
-from model.titanic import TitanicModel
-from model.estonia import EstoniaModel
 from model.frequency import FrequencySaver
 # server only Views
 
@@ -70,168 +50,13 @@ app.register_blueprint(post_api)
 app.register_blueprint(channel_api)
 app.register_blueprint(group_api)
 app.register_blueprint(section_api)
-app.register_blueprint(carChat_api)
-app.register_blueprint(titanic_api)
 # Added new files to create nestPosts, uses a different format than Mortensen and didn't want to touch his junk
 app.register_blueprint(nestPost_api)
 app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
-app.register_blueprint(carPost_api)
-app.register_blueprint(student_api)
-app.register_blueprint(vin_api)
-app.register_blueprint(chatbot_api)
-app.register_blueprint(carComments_api)
-app.register_blueprint(userCars_api)
-app.register_blueprint(mechanicsTips_api)
-app.register_blueprint(vinStore_api)
-app.register_blueprint(itemStore_api)
-app.register_blueprint(estonia_api)
-app.register_blueprint(accident_api)
-app.register_blueprint(cancer_api)
-app.register_blueprint(frequency_saver_api)
+app.register_blueprint(legoland_time_api)
+app.register_blueprint(hashtag_api)
 
-
-@app.route('/carPosts')
-@login_required  # Ensure that only logged-in users can access this page
-def carPosts():
-    carPost_data = CarPost.query.all()  # Fetch all car posts from the database
-    print("Car Post Data:", carPost_data)  # Debugging line to check if data is fetched
-    return render_template("carPosts.html", carPost_data=carPost_data)
-
-@app.route('/carChat')
-@login_required  # Ensure that only logged-in users can access this page
-def carChatPage():
-    carChat_data = carChat.query.all()  # Fetch all car chat messages from the database
-    print("Car Chat Data:", carChat_data)  # Debugging line to check if data is fetched
-    return render_template("carChat.html", carChat_data=carChat_data)
-
-@app.route('/carComments')
-@login_required  # Ensure that only logged-in users can access this page
-def carCommentsPage():
-    carComments_data = CarComments.query.all()  # Fetch all car comments from the database
-    print("Car Comments Data:", carComments_data)  # Debugging line to check if data is fetched
-    return render_template("carComments.html", carComments_data=carComments_data)
-
-@app.route('/mechanicsTips')
-@login_required  # Ensure that only logged-in users can access this page
-def mechanicsTipsPage():
-    mechanicsTips_data = MechanicsTip.query.all()  # Fetch all mechanics tips from the database
-    print("Mechanics Tips Data:", mechanicsTips_data)  # Debugging line to check if data is fetched
-    return render_template("mechanicsTips.html", mechanicsTips_data=mechanicsTips_data)
-
-@app.route('/listings')
-@login_required  # Ensure that only logged-in users can access this page
-def listingsPage():
-    listings_data = UserItem.query.all()  # Fetch all listings from the database
-    print("Listings Data:", listings_data)  # Debugging line to check if data is fetched
-    return render_template("listings.html", listings_data=listings_data)
-
-@app.route('/vehicles')
-@login_required  # Ensure that only logged-in users can access this page
-def vehiclesPage():
-    vehicles_data = Vehicle.query.all()  # Fetch all vehicles from the database
-    print("Vehicles Data:", vehicles_data)  # Debugging line to check if data is fetched
-    return render_template("vehicles.html", vehicles_data=vehicles_data)
-
-
-@app.route('/carChat/<int:id>', methods=['PUT'])
-def edit_chat_message(id):
-    data = request.get_json()  # Get the JSON data from the request
-    message = carChat.query.get(id)  # Find the message by ID
-    
-    if message is None:
-        return jsonify({"error": "Message not found"}), 404  # Return 404 if message doesn't exist
-    
-    # Update the message content
-    message._message = data.get('message', message._message)  # Update with new message content
-    message.update()  # Call the update method from the model
-    
-    return jsonify(message.read()), 200  # Return the updated message data
-
-@app.route('/carChat/<int:id>', methods=['DELETE'])
-def delete_chat_message(id):
-    message = carChat.query.get(id)
-    
-    if message:
-        message.delete()  # Call the delete method from the model
-        return jsonify({"message": "Message deleted"}), 200
-    else:
-        return jsonify({"error": "Message not found"}), 404
-
-from api.listings import fetch_listings
-@app.route('/api/fetchListings', methods=['GET'])
-def fetchListings():
-    cars = fetch_listings(2)
-    return jsonify([car for car in cars])
-
-@app.route('/api/carPost/allPosts/<string:car_type>', methods=['GET'])
-def allPosts(car_type):
-    if car_type not in ['gas', 'electric', 'hybrid', 'dream']:
-        return jsonify({'message': 'Car type must be one of gas, electric, hybrid, dream'}), 400
-    posts = CarPost.query.filter(CarPost._car_type == car_type).all()
-    return jsonify([post.read() for post in posts])
-
-@app.route('/api/carPost/postsByUser/<int:user_id>', methods=['GET'])
-def postsByUser(user_id):
-    user = User.query.get(user_id)
-    if user is None:
-        return jsonify({'message': 'User not found'}), 404
-    posts = CarPost.query.filter(CarPost._uid == user_id).all()
-    return jsonify([post.read() for post in posts])
-
-from model.carPostImage import carPostImage_base64_decode, carPostImage_base64_upload
-
-@app.route('/api/carPost/<int:post_id>/images', methods=['GET'])
-def getPostImages(post_id):
-    post = CarPost.query.get(post_id)
-    if post is None:
-        return jsonify({'message': 'Post not found'}), 404
-    image_url_table = post._image_url_table
-    if not image_url_table or len(image_url_table) == 0:
-        return jsonify({'message': 'There are no images for this post.'}), 404
-    
-    images = []
-    for url in ast.literal_eval(image_url_table):
-        print(url)
-        image = carPostImage_base64_decode(post_id, url)
-        images.append(image)
-        
-    return jsonify(images)
-
-@app.route('/api/carComment/<int:post_id>', methods=['GET'])
-def getPostComments(post_id):
-    post = CarPost.query.get(post_id)
-    if post is None:
-        return jsonify({'message': 'Post not found'}), 404
-    comments = CarComments.query.filter(CarComments._post_id == post_id).all()
-    return jsonify([comment.read() for comment in comments])
-
-@app.route('/api/data/mort', methods=['GET'])
-def get_data():
-    # start a list, to be used like a information database
-    InfoDb = []
-
-    # add a row to list, an Info record
-    InfoDb.append({
-        "FirstName": "John",
-        "LastName": "Mortensen",
-        "DOB": "October 21",
-        "Residence": "San Diego",
-        "Email": "jmortensen@powayusd.com",
-        "Owns_Cars": ["2015-Fusion", "2011-Ranger", "2003-Excursion", "1997-F350", "1969-Cadillac"]
-    })
-
-    # add a row to list, an Info record
-    InfoDb.append({
-        "FirstName": "Shane",
-        "LastName": "Lopez",
-        "DOB": "February 27",
-        "Residence": "San Diego",
-        "Email": "slopez@powayusd.com",
-        "Owns_Cars": ["2021-Insight"]
-    })
-    
-    return jsonify(InfoDb)
 
 
 
@@ -334,10 +159,13 @@ custom_cli = AppGroup('custom', help='Custom commands')
 # Define a command to run the data generation functions
 @custom_cli.command('generate_data')
 def generate_data():
-    initDefaultUser()
     initUsers()
     initSections()
-    initVehicles()
+    initGroups()
+    initChannels()
+    initPosts()
+    initVotes()
+    initNestPosts()
     
 # Backup the old database
 def backup_database(db_uri, backup_uri):
@@ -359,11 +187,7 @@ def extract_data():
         data['groups'] = [group.read() for group in Group.query.all()]
         data['channels'] = [channel.read() for channel in Channel.query.all()]
         data['posts'] = [post.read() for post in Post.query.all()]
-        data['carPosts'] = [post.read() for post in CarPost.query.all()]
-        data['user_items'] = [post.read() for post in UserItem.query.all()]
-        data['vehicles'] = [vehicle.read() for vehicle in Vehicle.query.all()]
-        data['carComments'] = [comment.read() for comment in CarComments.query.all()]
-    return data
+        return data
 
 # Save extracted data to JSON files
 def save_data_to_json(data, directory='backup'):
@@ -383,7 +207,7 @@ def save_data_to_json(data, directory='backup'):
 # Load data from JSON files
 def load_data_from_json(directory='backup'):
     data = {}
-    for table in ['users', 'sections', 'groups', 'channels', 'posts', 'carPosts', 'user_items', 'vehicles', 'carComments']:
+    for table in ['users', 'sections', 'groups', 'channels', 'posts']:
         with open(os.path.join(directory, f'{table}.json'), 'r') as f:
             data[table] = json.load(f)
     return data
@@ -396,10 +220,6 @@ def restore_data(data):
         _ = Group.restore(data['groups'], users)
         _ = Channel.restore(data['channels'])
         _ = Post.restore(data['posts'])
-        _ = UserItem.restore(data['user_items'])
-        _ = CarPost.restore(data['carPosts'])
-        _ = Vehicle.restore(data['vehicles'])
-        _ = CarComments.restore(data['carComments'])
     print("Data restored to the new database.")
 
 # Define a command to backup data
