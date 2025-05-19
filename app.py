@@ -1,7 +1,10 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from textblob import TextBlob
+from collections import defaultdict
 import random
+import pandas as pd
 import csv
 
 db = SQLAlchemy()
@@ -14,7 +17,9 @@ CORS(app, supports_credentials=True, origins='*')  # Allow all origins (*)
 def get_comments_from_file():
     comments = []
     try:
-        with open("/home/mihirthaha/nighthawk/healthmedia_backend-1/api/legoland_comments_all_posts.csv", newline='', encoding='utf-8') as csvfile:
+        import os
+        csv_path = os.path.join(os.path.dirname(__file__), 'api', 'legoland_comments_all_posts.csv')
+        with open(csv_path, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 comments.append(row['Comment'])  # Assuming 'Comment' is the correct column name
@@ -30,24 +35,33 @@ def analyze_sentiment(comment):
 
 # Add an API endpoint for sentiment analysis
 @app.route('/api/sentiment', methods=['GET'])
-def get_sentiment():
-    comments = get_comments_from_file()  # Get comments from the CSV file
-    
-    if not comments:
-        return jsonify({"error": "No comments available to analyze."}), 400  # Handle the case where no comments are found
-    
-    total_sentiment_score = 0
-    for comment in comments:
-        sentiment = analyze_sentiment(comment)  # Perform sentiment analysis
-        total_sentiment_score += sentiment
+def analyze_sentiment():
+    try:
+        # Load CSV file
+        df = pd.read_csv('/home/mihirthaha/nighthawk/healthmedia_backend-1/api/legoland_comments_all_posts.csv')
 
-    # Calculate the average sentiment score if there are comments
-    if len(comments) > 0:
-        average_sentiment = total_sentiment_score / len(comments)
-    else:
-        average_sentiment = 0  # If no comments, set to 0
+        # Group comments by Post Shortcode
+        grouped = defaultdict(list)
+        for _, row in df.iterrows():
+            grouped[row['Post Shortcode']].append(row['Comment'])
 
-    return jsonify({"average_sentiment": average_sentiment})
+        # Get the 3 latest posts (assuming newest are at the top)
+        latest_3_posts = list(grouped.keys())[:3]
+
+        sentiment_results = {}
+        for shortcode in latest_3_posts:
+            comments = grouped[shortcode]
+            if comments:
+                scores = [TextBlob(comment).sentiment.polarity for comment in comments]
+                average_score = sum(scores) / len(scores) if scores else 0
+                sentiment_results[shortcode] = round(average_score, 3)
+            else:
+                sentiment_results[shortcode] = None  # no comments
+
+        return jsonify(sentiment_results)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # Add an API endpoint to fetch some data
 @app.route('/api/data')
