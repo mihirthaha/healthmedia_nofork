@@ -29,6 +29,7 @@ from api.messages_api import messages_api # Adi added this, messages for his web
 from api.timeofdayapi import legoland_time_api
 from api.vote import vote_api
 from api.hashtag import hashtag_api
+from api.length import length_bp
 
 
 # database Initialization functions
@@ -56,6 +57,8 @@ app.register_blueprint(nestImg_api)
 app.register_blueprint(vote_api)
 app.register_blueprint(legoland_time_api)
 app.register_blueprint(hashtag_api)
+app.register_blueprint(length_bp)
+
 
 
 
