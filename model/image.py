@@ -69,7 +69,7 @@ print("Coefficients:", model.coef_)
 print("Intercept:", model.intercept_)
  
 # Uncomment the following lines to test the image prediction function
-image_path = "/home/clairelee/nighthawk/healthmedia_backend/model/IMG_3775.jpg"
+image_path = "./model/IMG_3775.jpg"
 predicted_likes = predict_likes_from_image(image_path) 
 print(f"Automatic prediction for image {image_path}: {predicted_likes}")
 
