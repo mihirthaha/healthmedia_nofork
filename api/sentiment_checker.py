@@ -13,7 +13,7 @@ def analyze_sentiment():
         with open(COMMENTS_FILE, newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                comment = row['Comment']
+                comment = row['Comment'] 
                 if comment.strip():  # Ignore empty comments
                     blob = TextBlob(comment)
                     sentiments.append({
