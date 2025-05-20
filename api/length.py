@@ -4,7 +4,7 @@ import pandas as pd
 # Create a Blueprint
 length_bp = Blueprint("length", __name__)
 
-# Load the correct CSV file
+# Load the correct CSV file.
 data = pd.read_csv("length.csv")
 
 @length_bp.route("/predict", methods=["GET"])
