@@ -4,7 +4,7 @@ import csv
 # Define the blueprint for the hashtag API
 hashtag_api = Blueprint('hashtag_api', __name__, url_prefix='/api')
 
-# Route to return all hashtags and their average likes from the CSV
+# Route to return all hashtags with likes, views, and score
 @hashtag_api.route('/average_likes', methods=['GET'])
 def average_likes_from_csv():
     results = []
@@ -12,11 +12,11 @@ def average_likes_from_csv():
         with open('hashtags.csv', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                hashtag = row['Hashtag'].strip()
-                likes = float(row['AverageLikes'])
                 results.append({
-                    'hashtag': hashtag,
-                    'average_likes': round(likes, 2)
+                    'hashtag': row['Hashtag'].strip(),
+                    'average_likes': round(float(row['AverageLikes']), 2),
+                    'estimated_views': round(float(row['EstimatedViews'])),
+                    'hashtag_success_score': int(row['HashtagSuccessScore'])
                 })
     except FileNotFoundError:
         return jsonify({'error': 'hashtags.csv file not found'}), 404
@@ -25,7 +25,7 @@ def average_likes_from_csv():
 
     return jsonify(results), 200
 
-# Route to return a single hashtag's average likes
+# Route to return a single hashtag's metrics
 @hashtag_api.route('/average_likes/<hashtag>', methods=['GET'])
 def get_hashtag_avg_likes(hashtag):
     try:
@@ -33,10 +33,11 @@ def get_hashtag_avg_likes(hashtag):
             reader = csv.DictReader(csvfile)
             for row in reader:
                 if row['Hashtag'].strip().lower() == hashtag.lower():
-                    likes = float(row['AverageLikes'])
                     return jsonify({
                         'hashtag': hashtag,
-                        'average_likes': round(likes, 2)
+                        'average_likes': round(float(row['AverageLikes']), 2),
+                        'estimated_views': round(float(row['EstimatedViews'])),
+                        'hashtag_success_score': int(row['HashtagSuccessScore'])
                     }), 200
         return jsonify({'message': f'Hashtag "{hashtag}" not found'}), 404
     except FileNotFoundError:
@@ -44,7 +45,7 @@ def get_hashtag_avg_likes(hashtag):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ✅ Fixed route to avoid duplicate /api prefix
+# POST route to analyze input hashtags and return aggregated metrics
 @hashtag_api.route('/hashtag', methods=['POST'])
 def analyze_hashtags_from_csv():
     data = request.get_json()
@@ -53,6 +54,8 @@ def analyze_hashtags_from_csv():
 
     input_tags = [tag.strip().lower().lstrip('#') for tag in data['hashtags'].split()]
     total_likes = 0
+    total_views = 0
+    total_score = 0
     count = 0
 
     try:
@@ -62,11 +65,18 @@ def analyze_hashtags_from_csv():
                 tag = row['Hashtag'].strip().lower()
                 if tag in input_tags:
                     total_likes += float(row['AverageLikes'])
+                    total_views += float(row['EstimatedViews'])
+                    total_score += int(row['HashtagSuccessScore'])
                     count += 1
     except FileNotFoundError:
         return jsonify({'error': 'hashtags.csv file not found'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    average = round(total_likes / count) if count > 0 else 0
-    return jsonify({'views': average}), 200
+    response = {
+        'average_likes': round(total_likes / count, 2) if count else 0,
+        'total_estimated_views': round(total_views),
+        'average_hashtag_success_score': round(total_score / count, 1) if count else 0
+    }
+
+    return jsonify(response), 200
