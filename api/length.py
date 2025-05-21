@@ -5,7 +5,7 @@ import os
 # Create a Blueprint
 length_bp = Blueprint("length", __name__, url_prefix="/api/lengths")
 
-# Load CSV safely (relative to this file's location)
+# Load CSV safely (relative to this file's locations)
 csv_path = os.path.join(os.path.dirname(__file__), "../length.csv")
 data = pd.read_csv(csv_path)
 
