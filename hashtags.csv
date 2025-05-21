@@ -1,6 +1,6 @@
 Hashtag,AverageLikes,EstimatedViews,HashtagSuccessScore
 legomodel,800,20000,6
-lego,5000,100000,9
+lego,5000,100000,7
 amusementpark,2200,60000,8
 legolandfestival,1400,45000,7
 drivingschool,1395,50000,7
@@ -17,11 +17,11 @@ legobricks,1600,45000,7
 explore,5200,110000,10
 car,4800,100000,9
 driving,2900,80000,8
-legobuild,1500,35000,6
+legobuild,1500,35000,5
 legocar,1300,30000,6
-legoracecar,1250,25000,5
-legodino,900,22000,5
-legoset,4100,85000,9
+legoracecar,1250,25000,3
+legodino,900,22000,2
+legoset,4100,85000,7
 springbreak,6000,130000,10
 hotelresort,2400,60000,8
 travel,7000,140000,10
