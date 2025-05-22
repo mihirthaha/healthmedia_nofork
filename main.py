@@ -66,6 +66,7 @@ app.register_blueprint(length_bp)
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
 
+
 @login_manager.unauthorized_handler
 def unauthorized_callback():
     return redirect(url_for('login', next=request.path))
