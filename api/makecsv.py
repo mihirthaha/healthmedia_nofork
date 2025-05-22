@@ -3,33 +3,93 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import ElementClickInterceptedException, ElementNotInteractableException
 
-# Configure headless Chrome browser
+USERNAME = "jeffburner678"
+PASSWORD = "1ms1gmab0y"
+
+# Set up Chrome options
 options = Options()
-options.add_argument("--headless=new")
-options.add_argument('--disable-blink-features=AutomationControlled')
+options.add_argument("--headless=new")  # Remove this line if you want to see the browser for debugging
+options.add_argument("--disable-blink-features=AutomationControlled")
+options.add_argument("--window-size=1920,1080")
 driver = webdriver.Chrome(options=options)
 
-# List of Instagram post/reel URLs
-reel_urls = [
-    "https://www.instagram.com/legolandcalifornia/reel/DI1xRs8TWJX/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/p/DHoIiYTO042/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIzd68Svk5b/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIw4DwHOSBI/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIwuzRCzP6C/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DItfPIlqMQO/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIo7jRDz5bW/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIkXhHoTULo/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIj9QuMTGAI/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/p/DIhYFlqzC3A/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DIe_egUzt42/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/p/DICkUZ6BbiM/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/reel/DJFWe1kTUPb/?hl=en",
-    "https://www.instagram.com/legolandcalifornia/p/DIhYFlqzC3A/",
-    "https://www.instagram.com/legolandcalifornia/reel/DIj9QuMTGAI/",
-    "https://www.instagram.com/legolandcalifornia/reel/DIe_egUzt42/",
-    
-]
+# === LOGIN TO INSTAGRAM ===
+def login_instagram():
+    driver.get("https://www.instagram.com/accounts/login/")
+    time.sleep(5)
+
+    username_input = driver.find_element(By.NAME, "username")
+    password_input = driver.find_element(By.NAME, "password")
+
+    username_input.send_keys(USERNAME)
+    password_input.send_keys(PASSWORD)
+    time.sleep(1)
+
+    login_button = driver.find_element(By.XPATH, "//button[@type='submit']")
+    login_button.click()
+    time.sleep(6)
+
+    # Skip "Save Your Login Info?"
+    try:
+        not_now_btn = driver.find_element(By.XPATH, "//button[contains(text(), 'Not Now')]")
+        not_now_btn.click()
+        time.sleep(3)
+    except:
+        pass
+
+    # Skip "Turn on Notifications"
+    try:
+        not_now_btn2 = driver.find_element(By.XPATH, "//button[contains(text(), 'Not Now')]")
+        not_now_btn2.click()
+        time.sleep(3)
+    except:
+        pass
+
+login_instagram()
+
+# === CONTINUE WITH YOUR SCRAPING ===
+driver.get("https://www.instagram.com/legolandcalifornia/")
+time.sleep(5)
+
+post_urls = set()
+scroll_pause = 2
+max_posts = 200
+last_height = driver.execute_script("return document.body.scrollHeight")
+
+def try_click_show_more():
+    try:
+        buttons = driver.find_elements(By.XPATH, "//button[contains(text(), 'Show more') or contains(text(), 'Load more')]")
+        for button in buttons:
+            if button.is_displayed():
+                button.click()
+                time.sleep(2)
+                return True
+    except (ElementClickInterceptedException, ElementNotInteractableException):
+        pass
+    return False
+
+while len(post_urls) < max_posts:
+    links = driver.find_elements(By.TAG_NAME, 'a')
+    for link in links:
+        href = link.get_attribute('href')
+        if href and ('/p/' in href or '/reel/' in href):
+            post_urls.add(href)
+        if len(post_urls) >= max_posts:
+            break
+
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    time.sleep(scroll_pause)
+    try_click_show_more()
+
+    new_height = driver.execute_script("return document.body.scrollHeight")
+    if new_height == last_height:
+        break
+    last_height = new_height
+
+post_urls = list(post_urls)[:max_posts]
+print(f"✅ Found {len(post_urls)} post URLs.")
 
 def extract_likes_or_views(driver):
     try:
@@ -52,7 +112,6 @@ def extract_post_time(driver):
         if "T" in full_time:
             hour = int(full_time.split("T")[1].split(":")[0])
             return hour
-            
     except:
         pass
     return "N/A"
@@ -65,6 +124,10 @@ def process_instagram_post(url):
         likes_or_views = extract_likes_or_views(driver)
         time_of_day = extract_post_time(driver)
 
+        if likes_or_views == "N/A" or time_of_day == "N/A":
+            print(f"⏭️ Skipping {url} due to missing data.")
+            return None
+
         return {
             "url": url,
             "likes/views": likes_or_views,
@@ -72,28 +135,22 @@ def process_instagram_post(url):
         }
 
     except Exception as e:
-        print(f"Error scraping {url}: {e}")
-        return {
-            "url": url,
-            "likes/views": "Error",
-            "time_of_day": "Error"
-        }
+        print(f"❌ Error scraping {url}: {e}")
+        return None
 
-# Scrape each post and collect results
 results = []
-for url in reel_urls:
-    print(f"Scraping: {url}")
+for url in post_urls:
+    print(f"🔍 Scraping: {url}")
     data = process_instagram_post(url)
-    results.append(data)
+    if data:
+        results.append(data)
 
-# Write results to CSV
 with open("legoland_posts.csv", "w", newline='', encoding="utf-8") as csvfile:
     fieldnames = ["url", "likes/views", "time_of_day"]
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
     writer.writeheader()
     for row in results:
         writer.writerow(row)
 
-print("✅ CSV created: legoland_posts.csv")
+print(f"✅ CSV created: legoland_posts.csv with {len(results)} valid posts")
 driver.quit()
