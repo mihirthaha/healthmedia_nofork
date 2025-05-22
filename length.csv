@@ -1,11 +1,11 @@
-Length,Performance
-10,bad
-20,poor
-30,good
-40,excellent
-50,excellent
-60,good
-70,good
-80,poor
-90,bad
-100,bad
+video_length_seconds,engagement_quality
+10,bad try to make it longer
+20,poor could be longer
+30,good likely to be watched
+40,excellent engagement 
+50,excellent engagement
+60,good likely to be watched
+70,good likely to be watched
+80,poor could be shorter
+90,bad try to make it shorter
+100,bad try to make it shorter
