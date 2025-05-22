@@ -2,6 +2,7 @@
 import json
 import os
 import ast
+import flask
 from urllib.parse import urljoin, urlparse
 from flask import abort, redirect, render_template, request, send_from_directory, url_for, jsonify  # import render_template from "public" flask libraries
 from flask_login import current_user, login_user, logout_user
@@ -9,13 +10,16 @@ from flask.cli import AppGroup
 from flask_login import current_user, login_required
 from flask import current_app
 from werkzeug.security import generate_password_hash
+from flask_cors import CORS
 import shutil
 import datetime
 
-
-
 # import "objects" from "this" project
 from __init__ import app, db, login_manager  # Key Flask objects 
+
+# Add CORS support
+CORS(app, supports_credentials=True)
+
 # API endpoints
 from api.user import user_api 
 from api.pfp import pfp_api
@@ -31,7 +35,6 @@ from api.vote import vote_api
 from api.hashtag import hashtag_api
 from api.length import length_bp
 
-
 # database Initialization functions
 from model.user import User, initUsers
 from model.section import Section, initSections
@@ -41,7 +44,6 @@ from model.post import Post, initPosts
 from model.nestPost import NestPost, initNestPosts # Justin added this, custom format for his website
 from model.vote import Vote, initVotes
 from model.frequency import FrequencySaver
-# server only Views
 
 # register URIs for api endpoints
 app.register_blueprint(messages_api) # Adi added this, messages for his website
@@ -59,13 +61,8 @@ app.register_blueprint(legoland_time_api)
 app.register_blueprint(hashtag_api)
 app.register_blueprint(length_bp)
 
-
-
-# Login Manager 
-
 # Tell Flask-Login the view function name of your login route
 login_manager.login_view = "login"
-
 
 @login_manager.unauthorized_handler
 def unauthorized_callback():
@@ -86,7 +83,23 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
-# Add these routes to your main.py file (after your existing login route)
+# Traditional login route (for server-side form submission)
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    next_page = request.args.get('next', '') or request.form.get('next', '')
+    if request.method == 'POST':
+        user = User.query.filter_by(_uid=request.form['username']).first()
+        if user and user.is_password(request.form['password']):
+            login_user(user)
+            if not is_safe_url(next_page):
+                return abort(400)
+            return redirect(next_page or url_for('index'))
+        else:
+            error = 'Invalid username or password.'
+    return render_template("login.html", error=error, next=next_page)
+
+# NEW API ENDPOINTS FOR AJAX LOGIN SYSTEM
 
 @app.route('/api/authenticate', methods=['POST'])
 def api_authenticate():
@@ -168,20 +181,88 @@ def api_create_user():
         print(f"User creation error: {e}")
         return jsonify({'message': 'User creation failed'}), 500
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    next_page = request.args.get('next', '') or request.form.get('next', '')
-    if request.method == 'POST':
-        user = User.query.filter_by(_uid=request.form['username']).first()
-        if user and user.is_password(request.form['password']):
-            login_user(user)
-            if not is_safe_url(next_page):
-                return abort(400)
-            return redirect(next_page or url_for('index'))
-        else:
-            error = 'Invalid username or password.'
-    return render_template("login.html", error=error, next=next_page)
+@app.route('/api/user', methods=['PUT'])
+def api_update_user():
+    """API endpoint to update user info"""
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'No data provided'}), 400
+        
+        # Update user fields
+        if 'name' in data:
+            current_user._name = data['name']
+        if 'uid' in data:
+            current_user._uid = data['uid']
+        if 'password' in data:
+            current_user.set_password(data['password'])
+        
+        # Save changes
+        db.session.commit()
+        
+        return jsonify({'message': 'User updated successfully'}), 200
+        
+    except Exception as e:
+        print(f"User update error: {e}")
+        return jsonify({'message': 'Update failed'}), 500
+
+@app.route('/api/user', methods=['GET'])
+def api_get_user():
+    """API endpoint to get user info"""
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'Not authenticated'}), 401
+    
+    try:
+        return jsonify({
+            'uid': current_user._uid,
+            'name': current_user._name,
+            'role': current_user._role if hasattr(current_user, '_role') else 'user'
+        }), 200
+    except Exception as e:
+        print(f"Get user error: {e}")
+        return jsonify({'message': 'Error getting user info'}), 500
+
+@app.route('/api/id/pfp', methods=['GET'])
+def api_get_profile_picture():
+    """API endpoint to get user profile picture"""
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'Not authenticated'}), 401
+    
+    try:
+        # Assuming your User model has a pfp field
+        pfp_data = current_user._pfp if hasattr(current_user, '_pfp') else None
+        return jsonify({
+            'uid': current_user._uid,
+            'name': current_user._name,
+            'pfp': pfp_data
+        }), 200
+    except Exception as e:
+        print(f"Get profile picture error: {e}")
+        return jsonify({'message': 'Error getting profile picture'}), 500
+
+@app.route('/api/id/pfp', methods=['PUT'])
+def api_update_profile_picture():
+    """API endpoint to update user profile picture"""
+    if not current_user.is_authenticated:
+        return jsonify({'message': 'Not authenticated'}), 401
+    
+    try:
+        data = request.get_json()
+        if not data or 'pfp' not in data:
+            return jsonify({'message': 'No profile picture data provided'}), 400
+        
+        # Update profile picture
+        current_user._pfp = data['pfp']
+        db.session.commit()
+        
+        return jsonify({'message': 'Profile picture updated successfully'}), 200
+        
+    except Exception as e:
+        print(f"Profile picture update error: {e}")
+        return jsonify({'message': 'Profile picture update failed'}), 500
     
 @app.route('/logout')
 def logout():
@@ -328,23 +409,3 @@ app.cli.add_command(custom_cli)
 if __name__ == "__main__":
     # change name for testing
     app.run(debug=True, host="0.0.0.0", port="8887")
-
-
-# @app.route('/api/mechanicsTips', methods=['GET'])
-# def get_mechanic_tip():
-#     make = request.args.get('make')
-#     model = request.args.get('model')
-#     year = request.args.get('year')
-#     issue = request.args.get('issue')
-
-#     if not make or not model or not year or not issue:
-#         return jsonify({'message': 'Missing required parameters'}), 400
-
-#     tip = MechanicsTip.query.filter_by(_make=make, _model=model, _year=year, _issue=issue).first()
-
-#     if tip:
-#         return jsonify(tip.read())
-#     else:
-#         return jsonify({'message': 'Tip not found'}), 404
-
-
