@@ -127,4 +127,3 @@ def initFrequencySaver():
            except IntegrityError:
                db.session.rollback()
                print(f"Record already exists or error occurred: {quiz}")
-

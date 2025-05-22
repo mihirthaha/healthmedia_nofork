@@ -10,7 +10,7 @@ frequency_saver_api = Blueprint('frequency_saver_api', __name__, url_prefix='/ap
 
 api = Api(frequency_saver_api)  # Attach Flask-RESTful API to the Blueprint
 
-
+a
 class FrequencySaverAPI:
    """
    Define the API CRUD endpoints for the Post model.
