@@ -86,6 +86,88 @@ def is_safe_url(target):
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
+# Add these routes to your main.py file (after your existing login route)
+
+@app.route('/api/authenticate', methods=['POST'])
+def api_authenticate():
+    """API endpoint for login - returns JSON"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'No data provided'}), 400
+            
+        username = data.get('uid')  # Your frontend sends 'uid'
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'message': 'Username and password required'}), 400
+        
+        user = User.query.filter_by(_uid=username).first()
+        if user and user.is_password(password):
+            login_user(user)
+            return jsonify({
+                'message': 'Login successful',
+                'uid': user._uid,
+                'name': user._name,
+                'role': user._role if hasattr(user, '_role') else 'user'
+            }), 200
+        else:
+            return jsonify({'message': 'Invalid username or password'}), 401
+            
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({'message': 'Login failed'}), 500
+
+@app.route('/api/id', methods=['GET'])
+def api_get_user_id():
+    """API endpoint to get current user info - returns JSON"""
+    try:
+        if current_user.is_authenticated:
+            return jsonify({
+                'uid': current_user._uid,
+                'name': current_user._name,
+                'role': current_user._role if hasattr(current_user, '_role') else 'user'
+            }), 200
+        else:
+            return jsonify({'message': 'Not authenticated'}), 401
+    except Exception as e:
+        print(f"Get user ID error: {e}")
+        return jsonify({'message': 'Error getting user info'}), 500
+
+@app.route('/api/user', methods=['POST'])
+def api_create_user():
+    """API endpoint for user registration - returns JSON"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'No data provided'}), 400
+            
+        name = data.get('name')
+        uid = data.get('uid')
+        password = data.get('password')
+        
+        if not all([name, uid, password]):
+            return jsonify({'message': 'Name, uid, and password are required'}), 400
+        
+        # Check if user already exists
+        existing_user = User.query.filter_by(_uid=uid).first()
+        if existing_user:
+            return jsonify({'message': 'User already exists'}), 409
+        
+        # Create new user
+        user = User(name=name, uid=uid, password=password)
+        user.create()
+        
+        return jsonify({
+            'message': 'User created successfully',
+            'uid': uid,
+            'name': name
+        }), 201
+        
+    except Exception as e:
+        print(f"User creation error: {e}")
+        return jsonify({'message': 'User creation failed'}), 500
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
