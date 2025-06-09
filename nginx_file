@@ -1,16 +1,35 @@
-server {
-    listen 80;
-    listen [::]:80;
-    server_name healthmedia.opencodingsociety.com
-    location / {
-        proxy_pass http://localhost:8505; (MINE)
-        if ($request_method = OPTIONS) {
-            add_header "Access-Control-Allow-Credentials" "true" always;
-            add_header "Access-Control-Allow-Origin"  "https://illuminati1618.github.io" always;
-            add_header "Access-Control-Allow-Methods" "GET, POST, PUT, DELETE, OPTIONS, HEAD" always;
-            add_header "Access-Control-Allow-MaxAge" 600 always;
-            add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Origin, X-Requested-With, Content-Type, Accept" always;
-            return 204;
-        }
-    }
-}
+   server {
+
+         server_name prism.stu.nighthawkcodingsociety.com;
+         location / {
+             proxy_pass http://localhost:8891;
+             if ($request_method = OPTIONS) {
+                 add_header "Access-Control-Allow-Credentials" "true" always;
+                 add_header "Access-Control-Allow-Origin"  "https://mihirthaha.github.io" always;
+                 add_header "Access-Control-Allow-Methods" "GET, POST, PUT, DELETE, OPTIONS, HEAD" always;
+                 add_header "Access-Control-Allow-MaxAge" 600 always;
+                 add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Origin, X-Requested-With, Content-Type, Accept" always;
+                 return 204;
+             }
+         }
+
+
+         listen [::]:443 ssl; # managed by Certbot
+         listen 443 ssl; # managed by Certbot
+         ssl_certificate /etc/letsencrypt/live/healthmedia.opencodingsociety.com/fullchain.pem; # managed by Certbot
+         ssl_certificate_key /etc/letsencrypt/live/healthmedia.opencodingsociety.com/privkey.pem; # managed by Certbot
+         include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+         ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+     }
+     server {
+         if ($host = healthmedia.opencodingsociety.com) {
+             return 301 https://$host$request_uri;
+         } # managed by Certbot
+
+
+         listen 80;
+         listen [::]:80;
+         server_name healthmedia.opencodingsociety.com;
+         return 404; # managed by Certbot
