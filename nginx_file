@@ -1,6 +1,6 @@
    server {
 
-         server_name prism.stu.nighthawkcodingsociety.com;
+         server_name heatlhmedia.opencodingsociety.com;
          location / {
              proxy_pass http://localhost:8891;
              if ($request_method = OPTIONS) {
