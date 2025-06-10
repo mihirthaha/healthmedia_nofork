@@ -782,4 +782,14 @@ def backup_data():
 
 # Define a command to restore data
 @custom_cli.command('restore_data')
-def restore_
+def restore_data_command():
+    data = load_data_from_json()
+    restore_data(data)
+    
+# Register the custom command group with the Flask application
+app.cli.add_command(custom_cli)
+        
+# this runs the flask application on the development server
+if __name__ == "__main__":
+    # change name for testing
+    app.run(debug=True, host="0.0.0.0", port="8891") #8106
